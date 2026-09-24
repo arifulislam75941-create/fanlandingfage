@@ -312,7 +312,7 @@ footer img{height:54px;width:auto;margin:0 auto 10px}
         </div>
       </div>
       <div class="color-card">
-        <div class="ph black"><div><b>ব্ল্যাক</b><span>ক্লাসিক ও স্মার্ট</span></div></div>
+        <div class="ph"><img src="fan-black.jpg" alt="ব্ল্যাক ফ্যান" loading="lazy"></div>
         <div class="meta">
           <strong><i class="dot black"></i>ব্ল্যাক</strong>
           <button class="pick" data-color="ব্ল্যাক">এই রং নিব</button>
@@ -403,6 +403,14 @@ footer img{height:54px;width:auto;margin:0 auto 10px}
             <input id="qty" name="qty" type="number" min="1" max="500" value="1" inputmode="numeric">
           </div>
         </div>
+        <div class="field">
+          <label for="payment">পেমেন্ট মেথড</label>
+          <select id="payment" name="payment">
+            <option>ক্যাশ অন ডেলিভারি</option>
+            <option>বিকাশ</option>
+            <option>নগদ</option>
+          </select>
+        </div>
         <div class="calc">
           <div><span>পণ্যের মূল্য</span><span id="sub">৫৫০ টাকা</span></div>
           <div><span>ডেলিভারি চার্জ</span><span>১২০ টাকা</span></div>
@@ -441,7 +449,7 @@ footer img{height:54px;width:auto;margin:0 auto 10px}
    অর্ডার আপনার কাছে পাঠাতে নিচের লিংকে ফর্ম-সার্ভিসের URL বসান।
    উদাহরণ (Formspree): "https://formspree.io/f/xxxxxxxx"
    খালি রাখলে অর্ডার কোথাও সেভ হবে না (শুধু পেজে কনফার্মেশন দেখাবে)। */
-const FORM_ENDPOINT = "";
+const FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycbzk5R4PNlkg4uPGNRkZtua180Or2_W_J6PLGvSnwwA2gIG9Gyo7pmSJPXwT7zI3JXKukw/exec";
 const UNIT_PRICE = 550;
 const DELIVERY = 120;
 
@@ -492,6 +500,7 @@ form.addEventListener("submit", async e => {
     name, phone: ph, address,
     color: form.color.value,
     quantity: q,
+    payment: form.payment.value,
     delivery_charge: DELIVERY + " BDT",
     total: (q * UNIT_PRICE + DELIVERY) + " BDT",
     product: "6 inch digital display fan"
@@ -500,12 +509,16 @@ form.addEventListener("submit", async e => {
   btn.disabled = true; btn.textContent = "অর্ডার হচ্ছে…";
   try{
     if(FORM_ENDPOINT){
-      const r = await fetch(FORM_ENDPOINT, {
-        method:"POST",
-        headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body: JSON.stringify(order)
+      const body = new URLSearchParams();
+      Object.entries(order).forEach(([k, v]) => body.append(k, v));
+      // Google Apps Script Web Apps don't return CORS headers, so the
+      // response can't be read from here — "no-cors" avoids a blocked
+      // request and we treat the request as sent once it doesn't throw.
+      await fetch(FORM_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        body
       });
-      if(!r.ok) throw new Error("bad response");
     }
     showSuccess(order);
   }catch(ex){
@@ -521,6 +534,7 @@ function showSuccess(o){
     `<div><span>নাম</span><b>${esc(o.name)}</b></div>` +
     `<div><span>মোবাইল</span><b>${bn(o.phone)}</b></div>` +
     `<div><span>রং</span><b>${esc(o.color)}</b></div>` +
+    `<div><span>পেমেন্ট</span><b>${esc(o.payment)}</b></div>` +
     `<div><span>পরিমাণ</span><b>${bn(o.quantity)} পিস</b></div>` +
     `<div><span>ডেলিভারি চার্জ</span><b>${bn(DELIVERY)} টাকা</b></div>` +
     `<div><span>সর্বমোট</span><b>${bn(o.quantity * UNIT_PRICE + DELIVERY)} টাকা</b></div>`;
